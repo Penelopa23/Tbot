@@ -1,4 +1,4 @@
-package bot.controller;
+package bot.config;
 
 import bot.constants.BotMessageEnum;
 import bot.message.CallbackQueryHandler;
@@ -7,6 +7,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;
@@ -22,8 +23,9 @@ import org.telegram.telegrambots.starter.SpringWebhookBot;
 
 @Getter
 @Setter
+@Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Bot extends SpringWebhookBot {
+public class BotConfig extends SpringWebhookBot {
 
     String botPath;
     String botUsername;
@@ -32,7 +34,7 @@ public class Bot extends SpringWebhookBot {
     MessageHandler messageHandler;
     CallbackQueryHandler callbackQueryHandler;
 
-    public Bot(SetWebhook setWebhook, MessageHandler messageHandler,CallbackQueryHandler callbackQueryHandler) {
+    public BotConfig(SetWebhook setWebhook, MessageHandler messageHandler, CallbackQueryHandler callbackQueryHandler) {
         super(setWebhook);
         this.messageHandler = messageHandler;
         this.callbackQueryHandler = callbackQueryHandler;

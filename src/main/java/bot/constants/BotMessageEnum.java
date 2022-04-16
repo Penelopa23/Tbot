@@ -12,6 +12,9 @@ public enum BotMessageEnum {
      */
     START_MESSAGE("\uD83D\uDC4B Привет! Воспользуйтесь клавиатурой, чтобы начать работу\uD83D\uDC47"),
 
+    CREATE_URL("Поздравляем!\ud83e\udd73 Вот ваша ссылка!"),
+    LOOK_URL("Вам уже была выдана ссылка\uD83D\uDC47"),
+
     /**
      * Ошибки кнопки
      */

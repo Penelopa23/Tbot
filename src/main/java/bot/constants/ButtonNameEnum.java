@@ -10,7 +10,8 @@ public enum ButtonNameEnum {
     /**
      * Стартовая кнопка
      */
-    START_BUTTON("Погнали!");
+    START_BUTTON("Погнали!"),
+    URL("Ссылка на вашу команду!");
 
     private final String buttonName;
 

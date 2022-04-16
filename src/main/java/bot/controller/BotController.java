@@ -1,6 +1,7 @@
 package bot.controller;
 
 
+import bot.config.BotConfig;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 @AllArgsConstructor
 public class BotController {
 
-    private final Bot bot;
+    private final BotConfig bot;
 
     // point for message
     @PostMapping("/")

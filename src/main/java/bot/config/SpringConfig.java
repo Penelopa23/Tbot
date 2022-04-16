@@ -1,6 +1,5 @@
 package bot.config;
 
-import bot.controller.Bot;
 import bot.message.CallbackQueryHandler;
 import bot.message.MessageHandler;
 import lombok.AllArgsConstructor;
@@ -24,10 +23,9 @@ public class SpringConfig {
     }
 
     @Bean
-    public Bot springWebhookBot(SetWebhook setWebhook,
-                                MessageHandler messageHandler,
-                                CallbackQueryHandler callbackQueryHandler) {
-        Bot bot = new Bot(setWebhook, messageHandler, callbackQueryHandler);
+    public BotConfig springWebhookBot(SetWebhook setWebhook,MessageHandler messageHandler,
+                                      CallbackQueryHandler callbackQueryHandler) {
+        BotConfig bot = new BotConfig(setWebhook, messageHandler,  callbackQueryHandler);
         bot.setBotToken(botConfig.getBotToken());
         bot.setBotUsername(botConfig.getUserName());
         bot.setBotPath(botConfig.getWebHookPath());

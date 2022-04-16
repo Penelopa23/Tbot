@@ -1,8 +1,8 @@
 package bot.message;
 
 import bot.constants.BotMessageEnum;
-import bot.constants.ButtonNameEnum;
 import bot.keyboard.BotKeyboard;
+import bot.keyboard.InlineKeyboardMaker;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -24,12 +24,15 @@ import java.util.HashMap;
  */
 
 @Component
-@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
+@FieldDefaults(makeFinal = false, level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
 public class MessageHandler {
 
-    private HashMap<String, String> users = new HashMap<>();
+
     private final BotKeyboard replyKeyboardMaker;
+    private final InlineKeyboardMaker inlineKeyboardMaker;
+    private HashMap<String, String> users = new HashMap<>();
+    private String mainUrl = "https://qrga.me/go/1";
 
     public BotApiMethod<?> answerMessage(Message message) {
 
@@ -41,34 +44,38 @@ public class MessageHandler {
         /**
          * Берём текст сообщения
          */
-        String inputText = message.getText();
-
+        String[] inputText = message.getText().split(" ");
         /**
          * Обрабатываем сообщение и отдаём ответ
          */
-        if (inputText == null) {
-            throw new IllegalArgumentException();
-        } else if (inputText.equals("/start")) {
-            return getStartMessage(chatId);
-        } else if (inputText.equals(ButtonNameEnum.START_BUTTON.getButtonName())) {
-            return answer(chatId);
-        } else {
-            return new SendMessage(chatId, BotMessageEnum.NON_COMMAND_MESSAGE.getMessage());
+        switch (inputText[0]) {
+            case ("/start"):
+                return getStartMessage(chatId);
+            case ("/create-base-url"):
+                return setUrl(chatId, inputText[1]);
+            case ("/clear-all-user"):
+                return clearMap(chatId);
+            case ("Погнали!"):
+                if (users.containsKey(chatId)) {
+                    return geteplyUrl(chatId);
+                } else {
+                    return getUrlMessage(chatId);
+                }
+            default:
+                return new SendMessage(chatId, BotMessageEnum.EXCEPTION_WHAT_THE_FUCK.getMessage());
         }
     }
 
-
-    private SendMessage answer(String chatId) {
-        SendMessage sendMessage = new SendMessage();
+    /**
+     * Формируем первый ответ с ссылкой
+     */
+    private SendMessage getUrlMessage(String chatId) {
+        String firstUrl = getUrl();
+        SendMessage sendMessage = new SendMessage(chatId, BotMessageEnum.CREATE_URL.getMessage());
         sendMessage.enableMarkdown(true);
         sendMessage.setChatId(chatId);
-        if (users.containsKey(chatId)) {
-            sendMessage.setText("Ранее вы уже получили ссылку: " + users.get(chatId));
-        } else {
-            String url = getUrl();
-            sendMessage.setText(url);
-            users.put(chatId, url);
-        }
+        sendMessage.setReplyMarkup(inlineKeyboardMaker.getInlineMessageButtonsWithTemplate(firstUrl));
+        users.put(chatId, firstUrl);
         return sendMessage;
     }
 
@@ -83,11 +90,39 @@ public class MessageHandler {
     }
 
     /**
+     * Формируем ответ на повторный запрос участника который уже получил ссылку
+     */
+    private SendMessage geteplyUrl(String chatId) {
+        SendMessage sendMessage = new SendMessage(chatId, BotMessageEnum.LOOK_URL.getMessage());
+        sendMessage.enableMarkdown(true);
+        sendMessage.setReplyMarkup(inlineKeyboardMaker.getInlineMessageButtonsWithTemplate(users.get(chatId)));
+        return sendMessage;
+    }
+
+    /**
+     * Устанавливаем новую ссылку
+     */
+    private SendMessage setUrl(String chatId, String url) {
+        mainUrl = url;
+        SendMessage sendMessage = new SendMessage(chatId, "Url was set");
+        return sendMessage;
+    }
+
+    /**
+     * Очищаем мапу с юзерами
+     */
+    private SendMessage clearMap(String chatId) {
+        users.clear();
+        SendMessage sendMessage = new SendMessage(chatId, "All users was deleted");
+        return sendMessage;
+    }
+
+    /**
      * Запращиваем ссылку для пользователя
      */
     @SneakyThrows
     private String getUrl() {
-        URL obj = new URL("https://qrga.me/go/1");
+        URL obj = new URL(mainUrl);
         HttpURLConnection connection = (HttpURLConnection) obj.openConnection();
 
         connection.setRequestMethod("GET");
