@@ -1,10 +1,9 @@
 package bot.message;
 
 import bot.constants.BotMessageEnum;
-import bot.keyboard.BotKeyboard;
-import bot.keyboard.InlineKeyboardMaker;
 import bot.utils.Utils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -17,16 +16,15 @@ import java.util.HashMap;
  * Класс принимающий сообщения пользователей
  */
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class MessageHandler {
 
     private static HashMap<String, String> users = new HashMap<>();
     private static HashMap<String, Boolean> admins = new HashMap<>();
-    private static String mainUrl = "https://qrga.me/go/1";
+    private static String mainUrl = "https://qrga.me/go/5";
     private final AdminMessageHandler adminMessageHandler;
-    private final BotKeyboard replyKeyboardMaker;
-    private final InlineKeyboardMaker inlineKeyboardMaker;
 
 
     public BotApiMethod<?> answerMessage(Message message) {
@@ -37,18 +35,13 @@ public class MessageHandler {
         String chatId = message.getChatId().toString();
 
         /**
-         * Проверка на админа и включённый доступ к панели админа
+         * Добавление админа и включение доступа к панели админа
          */
-        if (admins.containsKey(chatId)) {
-            if (admins.get(chatId).equals(true)) {
-                return adminMessageHandler.getAdminPanel(chatId, message);
-            }
+        if (message.getText().toLowerCase().equals("yaadmin")) {
+            admins.put(message.getChatId().toString(), true);
+            return adminMessageHandler.getAdminPanel(chatId, message);
         }
 
-        /**
-         * Проверка меня для отладки
-         */
-        if (!admins.containsKey(chatId)) admins.put("179755741", false);
 
         /**
          * Берём текст сообщения
@@ -61,12 +54,10 @@ public class MessageHandler {
          */
         switch (inputText) {
             case ("/start"):
-                return getStartMessage(chatId);
-            case ("Погнали!"):
-                if (users.containsKey(chatId)) {
-                    return getReplyUrl(chatId);
+                if (!users.containsKey(chatId)) {
+                    return getStartMessage(chatId);
                 } else {
-                    return getUrlMessage(chatId);
+                    return getReplyUrl(chatId);
                 }
             case ("/admin"):
                 if (admins.containsKey(chatId)) {
@@ -74,10 +65,7 @@ public class MessageHandler {
                     return adminMessageHandler.getAdminPanel(chatId, message);
                 }
             default:
-                SendMessage sendMessage = new SendMessage(chatId, BotMessageEnum.NON_COMMAND_MESSAGE.getMessage());
-                sendMessage.enableMarkdown(true);
-                sendMessage.setReplyMarkup(replyKeyboardMaker.getMainMenuKeyboard());
-                return sendMessage;
+                return new SendMessage(chatId, BotMessageEnum.NON_COMMAND_MESSAGE.getMessage());
         }
 
     }
@@ -86,21 +74,9 @@ public class MessageHandler {
      * Добавляем постоянную клавиатуру
      */
     public SendMessage getStartMessage(String chatId) {
-        SendMessage sendMessage = new SendMessage(chatId, BotMessageEnum.START_MESSAGE.getMessage());
-        sendMessage.enableMarkdown(true);
-        sendMessage.setReplyMarkup(this.replyKeyboardMaker.getMainMenuKeyboard());
-        return sendMessage;
-    }
-
-    /**
-     * Формируем первый ответ с ссылкой
-     */
-    SendMessage getUrlMessage(String chatId) {
         String firstUrl = Utils.getUrl(mainUrl);
-        SendMessage sendMessage = new SendMessage(chatId, BotMessageEnum.CREATE_URL.getMessage());
+        SendMessage sendMessage = new SendMessage(chatId, BotMessageEnum.START_MESSAGE.getMessage() + firstUrl);
         sendMessage.enableMarkdown(true);
-        sendMessage.setChatId(chatId);
-        sendMessage.setReplyMarkup(inlineKeyboardMaker.getInlineMessageButtonsWithTemplate(firstUrl));
         users.put(chatId, firstUrl);
         return sendMessage;
     }
@@ -110,9 +86,8 @@ public class MessageHandler {
      * Формируем ответ на повторный запрос участника который уже получил ссылку
      */
     private SendMessage getReplyUrl(String chatId) {
-        SendMessage sendMessage = new SendMessage(chatId, BotMessageEnum.LOOK_URL.getMessage());
+        SendMessage sendMessage = new SendMessage(chatId, BotMessageEnum.LOOK_URL.getMessage() + "\n" + users.get(chatId));
         sendMessage.enableMarkdown(true);
-        sendMessage.setReplyMarkup(inlineKeyboardMaker.getInlineMessageButtonsWithTemplate(users.get(chatId)));
         return sendMessage;
     }
 
@@ -123,10 +98,6 @@ public class MessageHandler {
 
     public static HashMap<String, Boolean> getAdmins() {
         return admins;
-    }
-
-    public static void setAdmins(String id, boolean condition) {
-        admins.put(id, condition);
     }
 
     public static String getMainUrl() {

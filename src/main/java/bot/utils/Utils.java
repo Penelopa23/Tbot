@@ -1,11 +1,12 @@
 package bot.utils;
 
 import lombok.SneakyThrows;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 
 public class Utils {
 
@@ -14,25 +15,36 @@ public class Utils {
      */
     @SneakyThrows
     public static String getUrl(String mainUrl) {
-        URL obj = new URL(mainUrl);
-        HttpURLConnection connection = (HttpURLConnection) obj.openConnection();
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        String result = "";
+        try {
 
-        connection.setRequestMethod("GET");
+            // создаем объект клиента
+            HttpGet request = new HttpGet(mainUrl);
+            CloseableHttpResponse response = httpClient.execute(request);
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-        String inputLine;
-        StringBuffer response = new StringBuffer();
+            try {
+                // получаем статус ответа
+                System.out.println(response.getProtocolVersion());              // HTTP/1.1
+                System.out.println(response.getStatusLine().getStatusCode());   // 200
+                System.out.println(response.getStatusLine().getReasonPhrase()); // OK
+                System.out.println(response.getStatusLine().toString());        // HTTP/1.1 200 OK
 
-        while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
+                HttpEntity entity = response.getEntity();
+                // если есть тело ответа
+                if (entity != null) {
+                    // возвращаем строку
+                    result = EntityUtils.toString(entity);
+                    System.out.println(result);
+                }
+
+            } finally {
+                // закрываем соединения
+                response.close();
+            }
+        } finally {
+            httpClient.close();
         }
-        in.close();
-        return response.toString();
-    }
-
-    public static String[] splitInputText(String inputText) {
-        String[] result = inputText.split("!");
         return result;
     }
-
 }
