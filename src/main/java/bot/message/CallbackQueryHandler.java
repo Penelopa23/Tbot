@@ -1,6 +1,7 @@
 package bot.message;
 
 import bot.constants.BotMessageEnum;
+import bot.utils.Utils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -19,8 +20,16 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 @RequiredArgsConstructor
 public class CallbackQueryHandler {
 
+
+    /**
+     * Обработка сообщения от кнопки с клавиатуры по изменению ссылки
+     */
     public BotApiMethod<?> processCallbackQuery(CallbackQuery buttonQuery) {
         final String chatId = buttonQuery.getMessage().getChatId().toString();
-        return new SendMessage(chatId, "TEXT");
+        switch (buttonQuery.getData()) {
+            case ("newUrl"):
+                return new SendMessage(chatId, MessageHandler.getMainUrl());
+        }
+        return new SendMessage(chatId, "Поздравляю вы долбаёб");
     }
 }

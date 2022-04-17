@@ -1,6 +1,5 @@
 package bot.keyboard;
 
-import bot.constants.ButtonNameEnum;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -13,31 +12,24 @@ import java.util.List;
  */
 
 @Component
-public class InlineKeyboardMaker {
+public class InlineAdminKeyboard {
+
     /**
      * Формируем клавиатуру и добавляем кнопки
      */
-    public InlineKeyboardMarkup getInlineMessageButtonsWithTemplate(String url) {
-        InlineKeyboardMarkup inlineKeyboardMarkup = getInlineMessageButtons(url);
-        inlineKeyboardMarkup.getKeyboard().add(getButton(
-                ButtonNameEnum.URL.getButtonName(),
-                url
-        ));
+    public InlineKeyboardMarkup getInlineMessageButtonsChangeUrl() {
+        InlineKeyboardMarkup inlineKeyboardMarkup = getButtonsForChangeUrl();
+
         return inlineKeyboardMarkup;
     }
 
     /**
      * Формируем линию кнопок и возвращаем в клаивиатуру
      */
-    public InlineKeyboardMarkup getInlineMessageButtons(String prefix) {
+    public InlineKeyboardMarkup getButtonsForChangeUrl() {
         List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
-        if (!rowList.isEmpty()) {
-            rowList.add(getButton(
-                    "Как так-то, а?",
-                    prefix
-            ));
-        }
 
+        rowList.add(getButton("Новая ссылка","newUrl"));
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         inlineKeyboardMarkup.setKeyboard(rowList);
         return inlineKeyboardMarkup;
@@ -46,10 +38,10 @@ public class InlineKeyboardMaker {
     /**
      * Создаём кнопку
      */
-    private List<InlineKeyboardButton> getButton(String buttonName, String url) {
+    private List<InlineKeyboardButton> getButton(String buttonName, String dataButton) {
         InlineKeyboardButton button = new InlineKeyboardButton();
         button.setText(buttonName);
-        button.setUrl(url);
+        button.setCallbackData(dataButton);
 
         List<InlineKeyboardButton> keyboardButtonsRow = new ArrayList<>();
         keyboardButtonsRow.add(button);

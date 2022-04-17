@@ -58,6 +58,7 @@ public class BotConfig extends SpringWebhookBot {
             CallbackQuery callbackQuery = update.getCallbackQuery();
             return callbackQueryHandler.processCallbackQuery(callbackQuery);
         } else {
+
             Message message = update.getMessage();
             if (message != null) {
                 return messageHandler.answerMessage(update.getMessage());

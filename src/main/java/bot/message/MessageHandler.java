@@ -3,19 +3,13 @@ package bot.message;
 import bot.constants.BotMessageEnum;
 import bot.keyboard.BotKeyboard;
 import bot.keyboard.InlineKeyboardMaker;
-import lombok.AccessLevel;
+import bot.utils.Utils;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
-import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.HashMap;
 
 
@@ -24,15 +18,16 @@ import java.util.HashMap;
  */
 
 @Component
-@FieldDefaults(makeFinal = false, level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
 public class MessageHandler {
 
-
+    private static HashMap<String, String> users = new HashMap<>();
+    private static HashMap<String, Boolean> admins = new HashMap<>();
+    private static String mainUrl = "https://qrga.me/go/1";
+    private final AdminMessageHandler adminMessageHandler;
     private final BotKeyboard replyKeyboardMaker;
     private final InlineKeyboardMaker inlineKeyboardMaker;
-    private HashMap<String, String> users = new HashMap<>();
-    private String mainUrl = "https://qrga.me/go/1";
+
 
     public BotApiMethod<?> answerMessage(Message message) {
 
@@ -42,35 +37,66 @@ public class MessageHandler {
         String chatId = message.getChatId().toString();
 
         /**
+         * Проверка на админа и включённый доступ к панели админа
+         */
+        if (admins.containsKey(chatId)) {
+            if (admins.get(chatId).equals(true)) {
+                return adminMessageHandler.getAdminPanel(chatId, message);
+            }
+        }
+
+        /**
+         * Проверка меня для отладки
+         */
+        if (!admins.containsKey(chatId)) admins.put("179755741", false);
+
+        /**
          * Берём текст сообщения
          */
-        String[] inputText = message.getText().split(" ");
+        String inputText = message.getText();
+
+
         /**
          * Обрабатываем сообщение и отдаём ответ
          */
-        switch (inputText[0]) {
+        switch (inputText) {
             case ("/start"):
                 return getStartMessage(chatId);
-            case ("/create-base-url"):
-                return setUrl(chatId, inputText[1]);
-            case ("/clear-all-user"):
-                return clearMap(chatId);
             case ("Погнали!"):
                 if (users.containsKey(chatId)) {
-                    return geteplyUrl(chatId);
+                    return getReplyUrl(chatId);
                 } else {
                     return getUrlMessage(chatId);
                 }
+            case ("/admin"):
+                if (admins.containsKey(chatId)) {
+                    admins.replace(chatId, false, true);
+                    return adminMessageHandler.getAdminPanel(chatId, message);
+                }
             default:
-                return new SendMessage(chatId, BotMessageEnum.EXCEPTION_WHAT_THE_FUCK.getMessage());
+                SendMessage sendMessage = new SendMessage(chatId, BotMessageEnum.NON_COMMAND_MESSAGE.getMessage());
+                sendMessage.enableMarkdown(true);
+                sendMessage.setReplyMarkup(replyKeyboardMaker.getMainMenuKeyboard());
+                return sendMessage;
         }
+
+    }
+
+    /**
+     * Добавляем постоянную клавиатуру
+     */
+    public SendMessage getStartMessage(String chatId) {
+        SendMessage sendMessage = new SendMessage(chatId, BotMessageEnum.START_MESSAGE.getMessage());
+        sendMessage.enableMarkdown(true);
+        sendMessage.setReplyMarkup(this.replyKeyboardMaker.getMainMenuKeyboard());
+        return sendMessage;
     }
 
     /**
      * Формируем первый ответ с ссылкой
      */
-    private SendMessage getUrlMessage(String chatId) {
-        String firstUrl = getUrl();
+    SendMessage getUrlMessage(String chatId) {
+        String firstUrl = Utils.getUrl(mainUrl);
         SendMessage sendMessage = new SendMessage(chatId, BotMessageEnum.CREATE_URL.getMessage());
         sendMessage.enableMarkdown(true);
         sendMessage.setChatId(chatId);
@@ -79,62 +105,35 @@ public class MessageHandler {
         return sendMessage;
     }
 
-    /**
-     * Добавляем постоянную клавиатуру
-     */
-    private SendMessage getStartMessage(String chatId) {
-        SendMessage sendMessage = new SendMessage(chatId, BotMessageEnum.START_MESSAGE.getMessage());
-        sendMessage.enableMarkdown(true);
-        sendMessage.setReplyMarkup(replyKeyboardMaker.getMainMenuKeyboard());
-        return sendMessage;
-    }
 
     /**
      * Формируем ответ на повторный запрос участника который уже получил ссылку
      */
-    private SendMessage geteplyUrl(String chatId) {
+    private SendMessage getReplyUrl(String chatId) {
         SendMessage sendMessage = new SendMessage(chatId, BotMessageEnum.LOOK_URL.getMessage());
         sendMessage.enableMarkdown(true);
         sendMessage.setReplyMarkup(inlineKeyboardMaker.getInlineMessageButtonsWithTemplate(users.get(chatId)));
         return sendMessage;
     }
 
-    /**
-     * Устанавливаем новую ссылку
-     */
-    private SendMessage setUrl(String chatId, String url) {
-        mainUrl = url;
-        SendMessage sendMessage = new SendMessage(chatId, "Url was set");
-        return sendMessage;
+
+    public static HashMap<String, String> getUsers() {
+        return users;
     }
 
-    /**
-     * Очищаем мапу с юзерами
-     */
-    private SendMessage clearMap(String chatId) {
-        users.clear();
-        SendMessage sendMessage = new SendMessage(chatId, "All users was deleted");
-        return sendMessage;
+    public static HashMap<String, Boolean> getAdmins() {
+        return admins;
     }
 
-    /**
-     * Запращиваем ссылку для пользователя
-     */
-    @SneakyThrows
-    private String getUrl() {
-        URL obj = new URL(mainUrl);
-        HttpURLConnection connection = (HttpURLConnection) obj.openConnection();
+    public static void setAdmins(String id, boolean condition) {
+        admins.put(id, condition);
+    }
 
-        connection.setRequestMethod("GET");
+    public static String getMainUrl() {
+        return mainUrl;
+    }
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-        String inputLine;
-        StringBuffer response = new StringBuffer();
-
-        while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
-        }
-        in.close();
-        return response.toString();
+    public static void setMainUrl(String mainUrl) {
+        MessageHandler.mainUrl = mainUrl;
     }
 }
