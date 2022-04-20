@@ -1,38 +1,32 @@
-package bot.message;
+package bot.scenarios.hakaton;
 
 import bot.config.BotConfig;
 import bot.constants.BotMessageEnum;
 import bot.keyboard.InlineAdminKeyboard;
+import bot.message.AdminMessageHandler;
+import bot.message.MessageHandler;
+import bot.scenarios.dao.User;
 import bot.utils.Utils;
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.polls.SendPoll;
 import org.telegram.telegrambots.meta.api.methods.polls.StopPoll;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.polls.Poll;
-import org.telegram.telegrambots.meta.api.objects.polls.PollAnswer;
-import org.telegram.telegrambots.meta.api.objects.polls.PollOption;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ForceReplyKeyboard;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-
-/**
- * Класс принимающий сообщения пользователей
- */
-
 @Slf4j
 @Component
-@RequiredArgsConstructor
-public class MessageHandler {
+@AllArgsConstructor
+public class MessageHandlerHakaton {
 
+    private final User user;
+//    private int messageIdPoll;
     private final InlineAdminKeyboard inlineAdminKeyboard;
     private static HashMap<String, String> users = new HashMap<>();
     private static HashMap<String, Boolean> admins = new HashMap<>();
@@ -41,8 +35,6 @@ public class MessageHandler {
 
 
     public BotApiMethod<?> answerMessage(Update update, BotConfig botConfig) throws TelegramApiException, InterruptedException {
-//        bot.execute(new StopPoll(message.getChatId().toString(), message.getMessageId()));
-
 
         /**
          * Берём идентификатор отправителя
@@ -63,15 +55,45 @@ public class MessageHandler {
          */
         String inputText = update.getMessage().getText();
 
+        try {
+            String[] fio = inputText.split(" ");
+            if (fio.length >= 3) {
+                StopPoll stopPoll = new StopPoll();
+                stopPoll.setMessageId(update.getMessage().getMessageId()-2);
+                stopPoll.setChatId(chatId);
+                botConfig.execute(stopPoll);
+                user.setFio(inputText);
+                return new SendMessage(chatId, "Напишите ваш возраст");
+            }
+        } catch (Exception e) {
+            log.error(e.toString());
+        }
+
+        try {
+            int age = Integer.parseInt(inputText);
+            if (age >= 10 && age <= 99) {
+                user.setAge(age);
+                return new SendMessage(chatId, "Напишите пожалуйста место вашего проживания. " +
+                        "Регион и населённый пункт.");
+            }
+            }catch (Exception e) {
+            log.error(e.toString());
+        }
+
+
+
+
         /**
          * Обрабатываем сообщение и отдаём ответ
          */
         switch (inputText) {
             case ("/start"):
                 if (!users.containsKey(chatId)) {
-                    return getPoll(chatId, botConfig);
+                    botConfig.execute(new SendMessage(chatId, "Мотивационое письмо!"));
+                    Thread.sleep(10000);
+                    return getPoll(chatId);
                 } else {
-                    return getReplyUrl(chatId);
+                    return getReply(chatId);
                 }
             case ("/admin"):
                 if (admins.containsKey(chatId)) {
@@ -88,41 +110,43 @@ public class MessageHandler {
      * Добавляем постоянную клавиатуру
      */
     public SendMessage getStartMessage(String chatId) {
-        return new SendMessage(chatId, "Приветствие! Нажми кнопку старт чтобы начать!");
+        return new SendMessage(chatId, "Привет дорогой друг, мы рады приветствовать тебя на Хакатоне!" +
+                " Нажми кнопку старт чтобы начать!");
     }
-    public SendMessage getStart(String chatId) {
 
-        return new SendMessage(chatId, "Мотивационный текст на заполнение информации");
-        }
+    public SendMessage setAnswerPoll(String chatId, Update update) {
+        int index = update.getPollAnswer().getOptionIds().get(0);
+        user.setAnswerPoll(getPollOptions().get(index));
+        return new SendMessage(chatId, "Напишите своё ФИО, например: Иванов Иван Иванович");
+    }
 
-    public SendPoll getPoll(String chatId, BotConfig botConfig) throws TelegramApiException, InterruptedException {
-    botConfig.execute(new SendMessage(chatId, "Мотивационный текст на заполнение информации"));
-    Thread.sleep(6000);
-    ArrayList<String> ll = new ArrayList<>();
-    ll.add("Экология и благотворительность");
-    ll.add("Социально-гуманитарные науки");
-    ll.add("Карьера и Soft skills");
-    ll.add("Наука и IT");
-    ll.add("Естественные науки");
-    ll.add("Медиа и Маркетинг");
-    ll.add("Здоровье (в том числе ментальное) и спорт");
-    ll.add("Культура и искусство");
-    ll.add("Патриотическое воспитание");
-    ll.add("Другое");
+    public SendPoll getPoll(String chatId) {
+        SendPoll sendPoll = new SendPoll(chatId, "Выберите пункт", getPollOptions());
+        sendPoll.setIsAnonymous(false);
+        return sendPoll;
+    }
 
-
-    SendPoll sendPoll = new SendPoll(chatId, "Выберите пункт", ll);
-    sendPoll.setIsAnonymous(false);
-    sendPoll.setOpenPeriod(30);//seconds
-    return sendPoll;
+    private ArrayList<String> getPollOptions() {
+        ArrayList<String> ll = new ArrayList<>();
+        ll.add("Экология и благотворительность");
+        ll.add("Социально-гуманитарные науки");
+        ll.add("Карьера и Soft skills");
+        ll.add("Наука и IT");
+        ll.add("Естественные науки");
+        ll.add("Медиа и Маркетинг");
+        ll.add("Здоровье (в том числе ментальное) и спорт");
+        ll.add("Культура и искусство");
+        ll.add("Патриотическое воспитание");
+        ll.add("Другое");
+        return ll;
     }
 
 
     /**
      * Формируем ответ на повторный запрос участника который уже получил ссылку
      */
-    private SendMessage getReplyUrl(String chatId) {
-        SendMessage sendMessage = new SendMessage(chatId, BotMessageEnum.LOOK_URL.getMessage() + "\n" + users.get(chatId));
+    private SendMessage getReply(String chatId) {
+        SendMessage sendMessage = new SendMessage(chatId, BotMessageEnum.LOOK_URL.getMessage());
         sendMessage.enableMarkdown(true);
         return sendMessage;
     }
@@ -137,11 +161,11 @@ public class MessageHandler {
 
     public void execute(String chatId) {
 
-            String url = "https://api.telegram.org/bot1970922099:AAFgu3OzMmbM5QAE0ww_JRXkMVoQjaP10Hc/sendMessage?" +
-                    "chat_id=" + chatId + "&text=" ;
+        String url = "https://api.telegram.org/bot1970922099:AAFgu3OzMmbM5QAE0ww_JRXkMVoQjaP10Hc/sendMessage?" +
+                "chat_id=" + chatId + "&text=" ;
 
-            Utils.getUrl(url);
-        }
+        Utils.getUrl(url);
+    }
 
 
     public static HashMap<String, String> getUsers() {
@@ -157,6 +181,6 @@ public class MessageHandler {
     }
 
     public static void setMainUrl(String mainUrl) {
-        MessageHandler.mainUrl = mainUrl;
+        MessageHandler.setMainUrl(mainUrl);
     }
 }

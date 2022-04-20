@@ -29,7 +29,16 @@ public class InlineAdminKeyboard {
     public InlineKeyboardMarkup getButtonsForChangeUrl() {
         List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
 
-        rowList.add(getButton("Новая ссылка","newUrl"));
+        rowList.add(getButton("Экология и благотворительность (НКО, экологические проблемы)","newUrl"));
+        rowList.add(getButton("Социально-гуманитарные науки (история, философия, политология, социология, психология, логика)","newUrl"));
+        rowList.add(getButton("Карьера и Soft skills (профориентация, тайм-менеджмент, лидерство, карьерные треки, экономика, финансовая грамотность)","newUrl"));
+        rowList.add(getButton("Наука и IT (астрономия, математика, информатика, робототехника, безопасность в сети/кибербезопасность)","newUrl"));
+        rowList.add(getButton("Естественные науки (биология, физика, химия, геология, космонавтика, астрономия)","newUrl"));
+        rowList.add(getButton("Медиа и Маркетинг (новые и старые медиа, журналистика, подкасты, социальные сети, SMM, маркетинговые исследования, PR","newUrl"));
+        rowList.add(getButton("Здоровье (в том числе ментальное) и спорт (нутрициология, танцы, профилактика заболеваний)","newUrl"));
+        rowList.add(getButton("Культура и искусство (живопись, актерское мастерство, кино, архитектура)","newUrl"));
+        rowList.add(getButton("Патриотическое воспитание","newUrl"));
+        rowList.add(getButton("Другое","newUrl"));
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         inlineKeyboardMarkup.setKeyboard(rowList);
         return inlineKeyboardMarkup;

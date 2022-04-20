@@ -2,6 +2,7 @@ package bot.config;
 
 import bot.message.CallbackQueryHandler;
 import bot.message.MessageHandler;
+import bot.scenarios.hakaton.MessageHandlerHakaton;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,7 +24,7 @@ public class SpringConfig {
     }
 
     @Bean
-    public BotConfig springWebhookBot(SetWebhook setWebhook,MessageHandler messageHandler,
+    public BotConfig springWebhookBot(SetWebhook setWebhook, MessageHandlerHakaton messageHandler,
                                       CallbackQueryHandler callbackQueryHandler) {
         BotConfig bot = new BotConfig(setWebhook, messageHandler,  callbackQueryHandler);
         bot.setBotToken(botConfig.getBotToken());

@@ -3,17 +3,21 @@ package bot.config;
 import bot.constants.BotMessageEnum;
 import bot.message.CallbackQueryHandler;
 import bot.message.MessageHandler;
+import bot.scenarios.hakaton.MessageHandlerHakaton;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.polls.StopPoll;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.polls.Poll;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.starter.SpringWebhookBot;
 
 
@@ -31,10 +35,10 @@ public class BotConfig extends SpringWebhookBot {
     String botUsername;
     String botToken;
 
-    MessageHandler messageHandler;
+    MessageHandlerHakaton messageHandler;
     CallbackQueryHandler callbackQueryHandler;
 
-    public BotConfig(SetWebhook setWebhook, MessageHandler messageHandler, CallbackQueryHandler callbackQueryHandler) {
+    public BotConfig(SetWebhook setWebhook, MessageHandlerHakaton messageHandler, CallbackQueryHandler callbackQueryHandler) {
         super(setWebhook);
         this.messageHandler = messageHandler;
         this.callbackQueryHandler = callbackQueryHandler;
@@ -43,7 +47,7 @@ public class BotConfig extends SpringWebhookBot {
     @Override
     public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
         try {
-            return handleUpdate(update);
+            return handleUpdate(update, this);
         } catch (IllegalArgumentException e) {
             return new SendMessage(update.getMessage().getChatId().toString(),
                     BotMessageEnum.EXCEPTION_ILLEGAL_MESSAGE.getMessage());
@@ -53,15 +57,18 @@ public class BotConfig extends SpringWebhookBot {
         }
     }
 
-    private BotApiMethod<?> handleUpdate(Update update) {
+    private BotApiMethod<?> handleUpdate(Update update, BotConfig botConfig) throws TelegramApiException, InterruptedException {
+        if(update.hasPollAnswer()) {
+            return messageHandler.setAnswerPoll(update.getPollAnswer().getUser().getId().toString(),
+                    update);
+        }
         if (update.hasCallbackQuery()) {
             CallbackQuery callbackQuery = update.getCallbackQuery();
             return callbackQueryHandler.processCallbackQuery(callbackQuery);
         } else {
-
             Message message = update.getMessage();
             if (message != null) {
-                return messageHandler.answerMessage(update.getMessage());
+                return messageHandler.answerMessage(update, botConfig);
             }
         }
         return null;
