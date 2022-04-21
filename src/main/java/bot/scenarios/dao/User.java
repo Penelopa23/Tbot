@@ -3,16 +3,21 @@ package bot.scenarios.dao;
 
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class User {
 
     private String answerPoll;
-    private String userId;
+    private long userId;
     private String fio;
-    private int age;
+    private Integer age;
     private String placeOfResidence;
     private String placeOfStudy;
     private String career;
+    private String whatThePoint;
+    private List<String> productCreationExperience;
+    private String url;
 
     public String getAnswerPoll() {
         return answerPoll;
@@ -22,11 +27,11 @@ public class User {
         this.answerPoll = answerPoll;
     }
 
-    public String getUserId() {
+    public long getUserId() {
         return userId;
     }
 
-    public void setUserId(String userId) {
+    public void setUserId(long userId) {
         this.userId = userId;
     }
 
@@ -38,11 +43,11 @@ public class User {
         this.fio = fio;
     }
 
-    public int getAge() {
+    public Integer getAge() {
         return age;
     }
 
-    public void setAge(int age) {
+    public void setAge(Integer age) {
         this.age = age;
     }
 
@@ -70,15 +75,27 @@ public class User {
         this.career = career;
     }
 
-    public String getPurpose() {
-        return purpose;
+    public String getWhatThePoint() {
+        return whatThePoint;
     }
 
-    public void setPurpose(String purpose) {
-        this.purpose = purpose;
+    public void setWhatThePoint(String whatThePoint) {
+        this.whatThePoint = whatThePoint;
     }
 
-    private String purpose;
-    
+    public List<String> getProductCreationExperience() {
+        return productCreationExperience;
+    }
 
+    public void setProductCreationExperience(List<String> productCreationExperience) {
+        this.productCreationExperience = productCreationExperience;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
 }

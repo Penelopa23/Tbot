@@ -52,6 +52,7 @@ public class BotConfig extends SpringWebhookBot {
             return new SendMessage(update.getMessage().getChatId().toString(),
                     BotMessageEnum.EXCEPTION_ILLEGAL_MESSAGE.getMessage());
         } catch (Exception e) {
+            System.out.println(e.toString());
             return new SendMessage(update.getMessage().getChatId().toString(),
                     BotMessageEnum.EXCEPTION_WHAT_THE_FUCK.getMessage());
         }
@@ -59,8 +60,14 @@ public class BotConfig extends SpringWebhookBot {
 
     private BotApiMethod<?> handleUpdate(Update update, BotConfig botConfig) throws TelegramApiException, InterruptedException {
         if(update.hasPollAnswer()) {
-            return messageHandler.setAnswerPoll(update.getPollAnswer().getUser().getId().toString(),
-                    update);
+            String chatId = update.getPollAnswer().getUser().getId().toString();
+            if(MessageHandlerHakaton.getUsers().containsKey(chatId)) {
+                if(MessageHandlerHakaton.getUsers().get(chatId).getWhatThePoint() != null ) {
+                    return messageHandler.setAnswerProductCreationExperience(chatId, update, this);
+                }
+                return messageHandler.setAnswerCareer(chatId, update, this);
+            }
+            return messageHandler.setAnswerPoll(chatId, update);
         }
         if (update.hasCallbackQuery()) {
             CallbackQuery callbackQuery = update.getCallbackQuery();
